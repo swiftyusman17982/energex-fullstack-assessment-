@@ -1,1 +1,1 @@
-# EnergeX-AI-Hiring-Test
+# energex-fullstack-assessment
