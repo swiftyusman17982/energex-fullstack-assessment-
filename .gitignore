@@ -58,14 +58,11 @@ redis_data/
 .docker/
 .docker-compose/
 .docker-env
-.env
-.env.*
 
 # Nginx build image output (frontend)
 nginx/*.pid
 
 # IDE / Editors
-.vscode/
 .idea/
 *.iml
 *.code-workspace
@@ -85,3 +82,7 @@ backend-node/.nyc_output/
 # Misc
 *.bak
 *.orig
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+config.bat
