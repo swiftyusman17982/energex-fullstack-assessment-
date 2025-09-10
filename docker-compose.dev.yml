@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: energex-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: energex_db
+      MYSQL_USER: energex_user
+      MYSQL_PASSWORD: energex_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    networks:
+      - energex-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: energex-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - energex-dev-network
+    command: redis-server --appendonly yes
+
+  # Lumen Backend API (Development)
+  backend-lumen:
+    build:
+      context: ./backend-lumen
+      dockerfile: Dockerfile.dev
+    container_name: energex-lumen-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: true
+      APP_KEY: base64:YourAppKeyHere
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: energex_db
+      DB_USERNAME: energex_user
+      DB_PASSWORD: energex_password
+      JWT_SECRET: your-jwt-secret-key-here
+      JWT_TTL: 60
+      JWT_REFRESH_TTL: 20160
+      CACHE_SERVICE_URL: http://backend-node:3001
+    volumes:
+      - ./backend-lumen:/var/www
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - energex-dev-network
+
+  # Node.js Cache Service (Development)
+  backend-node:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile.dev
+    container_name: energex-node-dev
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: energex_user
+      DB_PASSWORD: energex_password
+      DB_NAME: energex_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      CACHE_TTL: 300
+      CACHE_PREFIX: "energex:"
+      WS_PORT: 3002
+    volumes:
+      - ./backend-node:/app
+      - /app/node_modules
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - energex-dev-network
+
+  # React Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: energex-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://localhost:8000/api
+      REACT_APP_WS_URL: http://localhost:3001
+      CHOKIDAR_USEPOLLING: true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend-lumen
+      - backend-node
+    networks:
+      - energex-dev-network
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+
+networks:
+  energex-dev-network:
+    driver: bridge

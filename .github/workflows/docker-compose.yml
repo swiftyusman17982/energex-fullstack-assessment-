@@ -1,0 +1,83 @@
+name: Docker Compose Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-docker-compose:
+    name: Test Docker Compose Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and test services
+        run: |
+          # Build all services
+          docker-compose -f docker-compose.yml build
+          
+          # Start services
+          docker-compose -f docker-compose.yml up -d
+          
+          # Wait for services to be healthy
+          echo "Waiting for services to be ready..."
+          sleep 30
+          
+          # Test API endpoints
+          echo "Testing API endpoints..."
+          
+          # Test Lumen API health
+          curl -f http://localhost:8000/ || exit 1
+          
+          # Test Node.js cache service health
+          curl -f http://localhost:3001/health || exit 1
+          
+          # Test frontend
+          curl -f http://localhost:3000/ || exit 1
+          
+          # Test database connection
+          docker-compose exec -T mysql mysql -u energex_user -penergex_password energex_db -e "SELECT 1;" || exit 1
+          
+          # Test Redis connection
+          docker-compose exec -T redis redis-cli ping || exit 1
+          
+          echo "All services are healthy!"
+
+      - name: Run integration tests
+        run: |
+          # Test user registration
+          curl -X POST http://localhost:8000/api/register \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Test User","email":"test@example.com","password":"password123"}' \
+            || exit 1
+          
+          # Test user login
+          TOKEN=$(curl -s -X POST http://localhost:8000/api/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@example.com","password":"password123"}' \
+            | jq -r '.data.token')
+          
+          if [ "$TOKEN" = "null" ] || [ -z "$TOKEN" ]; then
+            echo "Failed to get token"
+            exit 1
+          fi
+          
+          # Test posts endpoint
+          curl -f -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/posts || exit 1
+          
+          # Test cache service
+          curl -f http://localhost:3001/cache/posts || exit 1
+          
+          echo "Integration tests passed!"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.yml down -v
+          docker system prune -f

@@ -1,0 +1,87 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+logs/
+*.swp
+*.swo
+*.tmp
+*.temp
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/.cache/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# React (CRA)
+*.map
+
+# Backend Node service
+backend-node/node_modules/
+backend-node/dist/
+backend-node/.env
+backend-node/.env.local
+backend-node/coverage/
+
+# PHP / Lumen
+backend-lumen/vendor/
+backend-lumen/bootstrap/cache/*
+!backend-lumen/bootstrap/cache/.gitkeep
+backend-lumen/storage/*.key
+backend-lumen/storage/*.log
+backend-lumen/storage/framework/cache/*
+backend-lumen/storage/framework/sessions/*
+backend-lumen/storage/framework/views/*
+backend-lumen/storage/logs/*
+!backend-lumen/storage/.gitkeep
+!backend-lumen/storage/framework/.gitkeep
+!backend-lumen/storage/framework/cache/.gitkeep
+!backend-lumen/storage/framework/sessions/.gitkeep
+!backend-lumen/storage/framework/views/.gitkeep
+backend-lumen/.env
+backend-lumen/.env.*
+
+# Composer
+composer.lock
+
+# MySQL / Data
+mysql_data/
+redis_data/
+
+# Docker
+**/.dockerignore
+.docker/
+.docker-compose/
+.docker-env
+.env
+.env.*
+
+# Nginx build image output (frontend)
+nginx/*.pid
+
+# IDE / Editors
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+
+# OS
+Icon?
+.Spotlight-V100
+.Trashes
+
+# Coverage / Reports
+coverage/
+backend-node/.nyc_output/
+
+# CI
+.github/**/*.log
+
+# Misc
+*.bak
+*.orig
